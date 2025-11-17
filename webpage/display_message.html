@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Message Central</title>
+<style>
+body {
+    background: rgba(0,0,0,0);
+    margin: 0;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+#central {
+    position: absolute;
+    left: 50%;
+    bottom: 5%; /* moitié basse de l'écran */
+    transform: translateX(-50%) translateY(100px); /* départ hors écran */
+    color: white;
+    font-size: 36px;
+    font-weight: bold;
+    text-align: center;
+    display: none;
+    padding: 30px 60px;
+    background: rgba(0,0,0,0.8);
+    border-radius: 20px;
+    max-width: 90%;
+    word-wrap: break-word;
+
+    /* Animation */
+    transition: transform 0.8s ease-in, opacity 0.8s ease-in;
+    opacity: 0;
+}
+#central.show {
+    transform: translateX(-50%) translateY(0); /* position finale */
+    opacity: 1;
+}
+#central.hide {
+    transform: translateX(-50%) translateY(100px); /* glisse vers le bas */
+    opacity: 0;
+}
+</style>
+</head>
+<body>
+<div id="central"></div>
+
+<script>
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for(let i=0; i<6; i++){
+        color += letters[Math.floor(Math.random()*16)];
+    }
+    return color;
+}
+
+const central = document.getElementById("central");
+const ws = new WebSocket("ws://localhost:6789");
+
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if(data.central && data.user && data.msg){
+        const userColor = getRandomColor();
+        central.innerHTML = `<b style="color:${userColor}">${data.user}</b>: <span style="color:white">${data.msg}</span>`;
+        central.style.display = "block";
+        central.classList.remove("hide");
+        // Ajouter la classe pour l'animation
+        setTimeout(() => {
+            central.classList.add("show");
+        }, 10);
+    } else {
+        central.classList.remove("show");
+        central.classList.add("hide");
+        // cacher après la transition
+        setTimeout(() => { central.style.display = "none"; }, 800);
+    }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Chat OBS</title>
+
+<style>
+    body {
+        background: rgba(0,0,0,0); /* Transparent */
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+    }
+
+    #chat {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 480px; /* 1/4 de 1920px */
+        max-height: 1080px;
+        display: flex;
+        flex-direction: column; /* classique : anciens en haut, nouveaux en bas */
+        padding: 10px;
+        box-sizing: border-box;
+        overflow-y: hidden;
+    }
+
+    .msg {
+        display: inline-block;
+        max-width: 480px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        margin: 5px 0;
+        padding: 6px 10px;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        font-size: 22px;
+        line-height: 1.2em;
+        font-weight: bold;
+    }
+
+    .user {
+        font-weight: bold;
+    }
+</style>
+
+</head>
+<body>
+
+<div id="chat"></div>
+
+<script>
+// Couleurs aléatoires pour chaque utilisateur
+const userColors = {};
+
+function getRandomColor() {
+    const colors = [
+        "#FF4B4B", "#FFA84B", "#FFD84B",
+        "#7DFF4B", "#4BFFDA", "#4BA3FF",
+        "#9D4BFF", "#FF4BBA"
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function getUserColor(username) {
+    if (!userColors[username]) {
+        userColors[username] = getRandomColor();
+    }
+    return userColors[username];
+}
+
+// Ajouter un message en bas de la pile
+function addMessage(user, message) {
+    const chat = document.getElementById("chat");
+
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "msg";
+
+    msgDiv.innerHTML = `<span class="user" style="color:${getUserColor(user)}">${user}</span>: <span>${message}</span>`;
+
+    chat.appendChild(msgDiv); // Ajoute en bas
+
+    // Scroll automatique si besoin pour garder le dernier visible
+    chat.scrollTop = chat.scrollHeight;
+}
+
+// Connexion Twitch IRC
+const CHANNEL = "gotaga";  // <-- Remplace par ton channel
+
+const ws = new WebSocket("wss://irc-ws.chat.twitch.tv:443");
+
+ws.onopen = () => {
+    ws.send("PASS SCHMOOPIIE");
+    ws.send("NICK justinfan12345");
+    ws.send(`JOIN #${CHANNEL}`);
+};
+
+ws.onmessage = (event) => {
+    const message = event.data;
+
+    if (message.includes("PING")) {
+        ws.send("PONG :tmi.twitch.tv");
+        return;
+    }
+
+    const match = message.match(/:(.*?)!.* PRIVMSG #.* :(.*)/);
+    if (match) {
+        const user = match[1];
+        const msg = match[2];
+        addMessage(user, msg);
+    }
+};
+</script>
+
+</body>
+</html>
