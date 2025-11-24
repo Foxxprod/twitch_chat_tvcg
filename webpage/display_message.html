@@ -13,8 +13,8 @@ body {
 #central {
     position: absolute;
     left: 50%;
-    bottom: 5%; /* moitié basse de l'écran */
-    transform: translateX(-50%) translateY(100px); /* départ hors écran */
+    bottom: 5%;
+    transform: translateX(-50%) translateY(100px);
     color: white;
     font-size: 36px;
     font-weight: bold;
@@ -25,17 +25,15 @@ body {
     border-radius: 20px;
     max-width: 90%;
     word-wrap: break-word;
-
-    /* Animation */
     transition: transform 0.8s ease-in, opacity 0.8s ease-in;
     opacity: 0;
 }
 #central.show {
-    transform: translateX(-50%) translateY(0); /* position finale */
+    transform: translateX(-50%) translateY(0);
     opacity: 1;
 }
 #central.hide {
-    transform: translateX(-50%) translateY(100px); /* glisse vers le bas */
+    transform: translateX(-50%) translateY(100px);
     opacity: 0;
 }
 </style>
@@ -44,6 +42,9 @@ body {
 <div id="central"></div>
 
 <script>
+// ------------------------
+// Couleur random pseudo
+// ------------------------
 function getRandomColor() {
     const letters = '0123456789ABCDEF';
     let color = '#';
@@ -53,27 +54,69 @@ function getRandomColor() {
     return color;
 }
 
+// ------------------------
+// Animation message central
+// ------------------------
 const central = document.getElementById("central");
-const ws = new WebSocket("ws://localhost:6789");
 
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if(data.central && data.user && data.msg){
-        const userColor = getRandomColor();
-        central.innerHTML = `<b style="color:${userColor}">${data.user}</b>: <span style="color:white">${data.msg}</span>`;
-        central.style.display = "block";
-        central.classList.remove("hide");
-        // Ajouter la classe pour l'animation
-        setTimeout(() => {
-            central.classList.add("show");
-        }, 10);
-    } else {
-        central.classList.remove("show");
-        central.classList.add("hide");
-        // cacher après la transition
-        setTimeout(() => { central.style.display = "none"; }, 800);
-    }
-};
+// ------------------------
+// WebSocket avec reconnexion auto
+// ------------------------
+let ws;
+let reconnectDelay = 2000; // 2 secondes
+
+function connectWebSocket() {
+    ws = new WebSocket("ws://localhost:6789");
+    console.log("Connexion au WebSocket...");
+
+    ws.onopen = () => {
+        console.log("Connecté au serveur !");
+    };
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.central && data.user && data.msg) {
+            const userColor = getRandomColor();
+            central.innerHTML = `<b style="color:${userColor}">${data.user}</b>: <span style="color:white">${data.msg}</span>`;
+            central.style.display = "block";
+            central.classList.remove("hide");
+
+            // petit délai pour déclencher l'animation
+            setTimeout(() => {
+                central.classList.add("show");
+            }, 10);
+
+        } else {
+            central.classList.remove("show");
+            central.classList.add("hide");
+            setTimeout(() => { central.style.display = "none"; }, 800);
+        }
+    };
+
+    ws.onclose = () => {
+        console.warn("Connexion perdue. Tentative de reconnexion...");
+        scheduleReconnect();
+    };
+
+    ws.onerror = () => {
+        console.error("Erreur WebSocket. Nouvelle tentative...");
+        ws.close();
+    };
+}
+
+// ------------------------
+// Gestion de la reconnexion
+// ------------------------
+function scheduleReconnect() {
+    setTimeout(() => {
+        console.log("Tentative de reconnexion...");
+        connectWebSocket();
+    }, reconnectDelay);
+}
+
+// Lancer la connexion au chargement
+connectWebSocket();
 </script>
 </body>
 </html>
