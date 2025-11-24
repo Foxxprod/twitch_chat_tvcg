@@ -14,7 +14,6 @@
 <img width="1678" height="912" alt="image" src="https://github.com/user-attachments/assets/2d839b8f-6ebb-4c13-a313-916485fd42b3" />
 
 <h2>Selection de la chaine twitch</h2>
-
 <p>La selection de la chaine twitch pour la selection d'un message se fais dans l'interface, le chat global lui, dans le code de la page web</p>
 
 <img width="471" height="38" alt="image" src="https://github.com/user-attachments/assets/52596e8c-03b0-4e92-a059-3b6852f51c8f" />
