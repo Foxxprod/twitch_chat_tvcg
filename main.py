@@ -126,6 +126,9 @@ def start_ui():
         global central_active
         central_active = not central_active
 
+        print("Central active:", central_active)
+
+
         data_to_send = {
             "central": central_active,
             "user": selected_message["user"] if selected_message else "",
@@ -164,27 +167,43 @@ def twitch_listener(listbox):
         print("Erreur IRC :", e)
         return
 
+    buffer = ""   # 🔥 buffer pour stocker les données partielles
+
     while True:
         try:
-            resp = sock.recv(2048).decode("utf-8", errors="ignore")
+            buffer += sock.recv(2048).decode("utf-8", errors="ignore")
         except:
             break
 
-        if resp.startswith("PING"):
-            sock.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
-            continue
+        # Tant qu'un message complet est disponible
+        while "\r\n" in buffer:
+            line, buffer = buffer.split("\r\n", 1)
 
-        if "PRIVMSG" in resp:
-            try:
-                author = resp.split("!",1)[0][1:]
-                message = resp.split("PRIVMSG",1)[1].split(":",1)[1]
-                data = {"user": author, "msg": message}
-                messages.append(data)
+            # Réponse au ping
+            if line.startswith("PING"):
+                try:
+                    sock.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
+                except:
+                    pass
+                continue
 
-                listbox.insert(tk.END, f"{author} : {message}")
+            # Traitement d'un PRIVMSG
+            if "PRIVMSG" in line:
+                try:
+                    # Extraire auteur
+                    author = line.split("!", 1)[0][1:]
 
-            except:
-                pass
+                    # Extraire message
+                    message = line.split("PRIVMSG", 1)[1].split(":", 1)[1]
+
+                    data = {"user": author, "msg": message}
+                    messages.append(data)
+
+                    listbox.insert(tk.END, f"{author} : {message}")
+
+                except Exception as e:
+                    print("Erreur parsing IRC:", e)
+
 
 # ---------------------------
 # WebSocket serveur
@@ -203,7 +222,9 @@ async def handler(websocket):
 async def send_to_clients(data):
     if clients:
         tasks = [asyncio.create_task(client.send(data)) for client in clients]
+        print("Envoi de:", data)
         await asyncio.wait(tasks)
+
 
 def start_websocket_server():
     async def main():

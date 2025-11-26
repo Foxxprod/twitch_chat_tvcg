@@ -82,14 +82,12 @@ function connectWebSocket() {
             central.style.display = "block";
             central.classList.remove("hide");
 
-            console.log(data);
             // petit délai pour déclencher l'animation
             setTimeout(() => {
                 central.classList.add("show");
             }, 10);
 
         } else {
-            console.log("supression du message")
             central.classList.remove("show");
             central.classList.add("hide");
             setTimeout(() => { central.style.display = "none"; }, 800);
